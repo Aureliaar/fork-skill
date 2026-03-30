@@ -36,10 +36,11 @@ When invoked with `/fork <task description>`:
    ```
    The script reads the plan from stdin and writes it to `tmp/forks/` automatically.
 
-   Default provider is `claude`. If the first word of the task matches a provider name, use that provider:
-   - `/fork fix the curves` → claude (default)
+   Default provider is the current provider. If the first word of the task matches a provider name, use that provider:
+   - `/fork fix the curves` → current provider (for example `codex` in Codex, `claude` in Claude Code)
    - `/fork gemini fix the curves` → gemini
    - `/fork codex fix the curves` → codex
+   - `/fork claude fix the curves` → claude
    - `/fork claude-glm fix the curves` → claude-glm (Claude Code with z.ai GLM provider)
 
 2. **Report back** in one line with the fork name, and continue the current conversation.

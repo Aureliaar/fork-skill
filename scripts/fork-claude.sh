@@ -5,17 +5,17 @@
 #   bash scripts/fork-claude.sh <title> [--provider claude|claude-glm|gemini|codex] <<< "plan content"
 #
 # Plan content is read from stdin so the caller can do it in one command.
-# Default provider: claude
+# Default provider: current session provider (falls back to claude)
 
 set -euo pipefail
 
 TITLE=""
-PROVIDER="claude"
+REQUESTED_PROVIDER=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --provider)
-      PROVIDER="${2:-}"
+      REQUESTED_PROVIDER="${2:-}"
       shift 2
       ;;
     *)
@@ -28,6 +28,35 @@ while [[ $# -gt 0 ]]; do
 done
 
 TITLE="${TITLE:-Fork}"
+
+resolve_current_provider() {
+  if [[ -n "${FORK_PROVIDER:-}" ]]; then
+    echo "$FORK_PROVIDER"
+    return
+  fi
+
+  if [[ -n "${CODEX_THREAD_ID:-}" || -n "${CODEX_MANAGED_BY_NPM:-}" ]]; then
+    echo "codex"
+    return
+  fi
+
+  if [[ -n "${CLAUDECODE:-}" ]]; then
+    if [[ "${CLAUDE_CODE_PROVIDER:-${CLAUDECODE_PROVIDER:-}}" == "claude-glm" ]]; then
+      echo "claude-glm"
+    else
+      echo "claude"
+    fi
+    return
+  fi
+
+  echo "claude"
+}
+
+PROVIDER="${REQUESTED_PROVIDER:-current}"
+if [[ "$PROVIDER" == "current" ]]; then
+  PROVIDER="$(resolve_current_provider)"
+fi
+
 PROJECT_DIR="${FORK_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 
 mkdir -p "$PROJECT_DIR/tmp/forks"
