@@ -64,28 +64,30 @@ That's it. No "Key Files" section, no "Discover" section. The fork has full acce
 
 ## Checking fork results
 
-When the user asks to check on a fork — e.g. `/fork status <name>`, "check that fork", "what did the fork say":
+**Always run the check script directly via Bash — never ask the user to invoke `/fork status`.** This applies both when the user asks and when you want to proactively report on a fork you launched earlier.
 
-1. **Determine the fork name.** This is the `<short title>` that was passed to `fork-claude.sh` when launching. If the user doesn't specify, use the title from the most recent `/fork` launch in this conversation.
+```bash
+SKILL_DIR="${CODEX_HOME:-$HOME/.codex}/skills/fork"
+if [[ ! -f "$SKILL_DIR/scripts/fork_last_response.py" ]]; then
+  SKILL_DIR="$HOME/.claude/skills/fork"
+fi
+python "$SKILL_DIR/scripts/fork_last_response.py" --by-name "<fork title>"
+```
 
-2. **Run the check script:**
-   ```bash
-   SKILL_DIR="${CODEX_HOME:-$HOME/.codex}/skills/fork"
-   if [[ ! -f "$SKILL_DIR/scripts/fork_last_response.py" ]]; then
-     SKILL_DIR="$HOME/.claude/skills/fork"
-   fi
-   python "$SKILL_DIR/scripts/fork_last_response.py" --by-name "<fork title>"
-   ```
-
-3. **Report the result.** The script outputs:
-   - The last text the forked session produced (truncated to 5000 chars)
-   - `[still running]` if the fork hasn't finished yet
-   - An error if no matching session was found
+The script outputs:
+- The last text the forked session produced (truncated to 5000 chars)
+- `[still running]` if the fork hasn't finished yet
+- An error if no matching session was found
 
 You can also check by session UUID if known:
 ```bash
 python "$SKILL_DIR/scripts/fork_last_response.py" <session-uuid-or-path>
 ```
+
+**When to check proactively (without being asked):**
+- After reporting that a fork was launched, if the conversation naturally reaches a point where the fork's result is needed, check it yourself.
+- If a fork is blocking next steps, poll it and report back rather than saying "check with `/fork status`".
+- If the user asks "what happened with X?" or "did the fork finish?" — run the script immediately, don't redirect them.
 
 ## Important
 
