@@ -11,11 +11,16 @@ set -euo pipefail
 
 TITLE=""
 REQUESTED_PROVIDER=""
+MODE="exec"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --provider)
       REQUESTED_PROVIDER="${2:-}"
+      shift 2
+      ;;
+    --mode)
+      MODE="${2:-exec}"
       shift 2
       ;;
     *)
@@ -91,9 +96,16 @@ echo '============================='
 echo ''
 
 PLAN_CONTENT="$(cat 'PLAN_FILE_PLACEHOLDER')"
-SYSTEM_PROMPT="You were forked from another conversation to handle this task. Read the plan below and get started immediately.
+
+if [[ "MODE_PLACEHOLDER" == "plan" ]]; then
+  SYSTEM_PROMPT="You were forked from another conversation to explore this task. Read the context below, then enter plan mode (use /plan). Present what you understand and your proposed approach, then WAIT for the user to discuss, refine, or approve before taking any action.
 
 ${PLAN_CONTENT}"
+else
+  SYSTEM_PROMPT="You were forked from another conversation to handle this task. Read the plan below and get started immediately.
+
+${PLAN_CONTENT}"
+fi
 
 case "PROVIDER_PLACEHOLDER" in
   claude)
@@ -129,6 +141,7 @@ sed -i "s|PROJECT_DIR_PLACEHOLDER|$(escape_for_sed "$PROJECT_DIR")|g" "$LAUNCHER
 sed -i "s|PLAN_FILE_PLACEHOLDER|$(escape_for_sed "$PLAN_FILE")|g" "$LAUNCHER"
 sed -i "s|FORK_NAME_PLACEHOLDER|$(escape_for_sed "$TITLE")|g" "$LAUNCHER"
 sed -i "s|PROVIDER_PLACEHOLDER|$(escape_for_sed "$PROVIDER")|g" "$LAUNCHER"
+sed -i "s|MODE_PLACEHOLDER|$(escape_for_sed "$MODE")|g" "$LAUNCHER"
 
 chmod +x "$LAUNCHER"
 

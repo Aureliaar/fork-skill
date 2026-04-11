@@ -14,17 +14,30 @@ Opens a new AI session in a separate terminal window for a side-task, so the cur
 
 **Pass context, don't fetch it.** Write what you already know from this conversation into the plan file. Do NOT make tool calls (reads, greps, etc.) to gather info for the fork — that's the fork's job. If you read a file 30 messages ago and remember something relevant, write it. If you haven't looked at something, don't — just mention it and move on.
 
+## Two modes
+
+| Syntax | Mode | What happens |
+|--------|------|-------------|
+| `/fork <task>` | **exec** (default) | Fork starts working immediately |
+| `/fork plan <task>` | **plan** | Fork receives context, enters plan mode, and waits for the user to talk before doing anything |
+
+**When to use plan mode:** The user wants to open a side conversation to explore/discuss something interactively — they'll drive the fork themselves. The fork presents what it understands and proposes an approach, then waits.
+
+**When to use exec mode:** Fire-and-forget. The fork has enough info to just go.
+
 ## Launching a fork
 
-When invoked with `/fork <task description>`:
+When invoked with `/fork [plan] <task description>`:
 
-1. **Write the plan and launch in a single Bash call** — so the user only needs one `/undo` to roll back the fork from the caller's context:
+1. **Detect the mode.** If the first word after `/fork` (and after any provider keyword) is `plan`, strip it and pass `--mode plan`. Otherwise default to `--mode exec`.
+
+2. **Write the plan and launch in a single Bash call** — so the user only needs one `/undo` to roll back the fork from the caller's context:
    ```bash
    SKILL_DIR="${CODEX_HOME:-$HOME/.codex}/skills/fork"
    if [[ ! -f "$SKILL_DIR/scripts/fork-claude.sh" ]]; then
      SKILL_DIR="$HOME/.claude/skills/fork"
    fi
-   bash "$SKILL_DIR/scripts/fork-claude.sh" "<short title>" [--provider claude|claude-glm|gemini|codex] <<'EOF'
+   bash "$SKILL_DIR/scripts/fork-claude.sh" "<short title>" [--provider claude|claude-glm|gemini|codex] [--mode plan|exec] <<'EOF'
    # Fork: <short title>
 
    ## Do
@@ -37,13 +50,13 @@ When invoked with `/fork <task description>`:
    The script reads the plan from stdin and writes it to `tmp/forks/` automatically.
 
    Default provider is the current provider. If the first word of the task matches a provider name, use that provider:
-   - `/fork fix the curves` → current provider (for example `codex` in Codex, `claude` in Claude Code)
-   - `/fork gemini fix the curves` → gemini
-   - `/fork codex fix the curves` → codex
-   - `/fork claude fix the curves` → claude
-   - `/fork claude-glm fix the curves` → claude-glm (Claude Code with z.ai GLM provider)
+   - `/fork fix the curves` → exec mode, current provider
+   - `/fork plan fix the curves` → plan mode, current provider
+   - `/fork gemini fix the curves` → exec mode, gemini
+   - `/fork gemini plan fix the curves` → plan mode, gemini
+   - `/fork plan gemini fix the curves` → plan mode, gemini
 
-2. **Report back** in one line with the fork name, and continue the current conversation.
+3. **Report back** in one line with the fork name and mode, and continue the current conversation.
 
 ## Plan file format
 
